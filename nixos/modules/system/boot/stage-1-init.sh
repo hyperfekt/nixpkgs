@@ -397,7 +397,7 @@ lustrateRoot () {
     mkdir -m 0755 -p "$root/etc"
     touch "$root/etc/NIXOS"
 
-    exec 4< "$root/old-root/etc/NIXOS_LUSTRATE"
+    exec 5< "$root/old-root/etc/NIXOS_LUSTRATE"
 
     echo
     echo "Restoring selected impurities:"
@@ -407,7 +407,7 @@ lustrateRoot () {
         cp -av "$root/old-root/$keeper" "$root/$keeper"
     done
 
-    exec 4>&-
+    exec 5>&-
 }
 
 
@@ -442,7 +442,23 @@ fi
 # Try to find and mount the root device.
 mkdir -p $targetRoot
 
-exec 3< @fsInfo@
+waitMountDevice() {
+    local device="$1"
+    if ! waitDevice "$device"; then
+        # If it doesn't appear, try to mount it anyway (and
+        # probably fail). This is a fallback for non-device "devices"
+        # that we don't properly recognise.
+        echo "Timed out waiting for device $device, trying to mount anyway."
+    fi
+}
+
+exec 3< @additionalMountDevices@
+
+while read -u 3 device; do
+    waitMountDevice $device
+done
+
+exec 4< @fsInfo@
 
 while read -u 3 mountPoint; do
     read -u 3 device
@@ -471,11 +487,8 @@ while read -u 3 mountPoint; do
             ;;
     esac
 
-    if test -z "$pseudoDevice" && ! waitDevice "$device"; then
-        # If it doesn't appear, try to mount it anyway (and
-        # probably fail).  This is a fallback for non-device "devices"
-        # that we don't properly recognise.
-        echo "Timed out waiting for device $device, trying to mount anyway."
+    if test -z "$pseudoDevice"; then
+        waitMountDevice $device
     fi
 
     # Wait once more for the udev queue to empty, just in case it's

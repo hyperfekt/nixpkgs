@@ -263,7 +263,8 @@ let
     inherit (config.system.build) earlyMountScript;
 
     inherit (config.boot.initrd) checkJournalingFS
-      preLVMCommands preDeviceCommands postDeviceCommands postMountCommands preFailCommands kernelModules;
+      preLVMCommands preDeviceCommands additionalMountDevices postDeviceCommands postMountCommands preFailCommands kernelModules;
+
 
     resumeDevices = map (sd: if sd ? device then sd.device else "/dev/disk/by-label/${sd.label}")
                     (filter (sd: hasPrefix "/dev/" sd.device && !sd.randomEncryption.enable
@@ -416,6 +417,15 @@ in
         device nodes.
       '';
     };
+
+    boot.initrd.additionalMountDevices = mkOption {
+      default = "";
+      type = types.lines;
+      description = ''
+        Devices in addition to those already in config.fileSystems that
+        should be waited for to appear before attempting mounts.
+      '';
+    }
 
     boot.initrd.postDeviceCommands = mkOption {
       default = "";
