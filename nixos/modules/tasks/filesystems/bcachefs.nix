@@ -4,6 +4,8 @@ with lib;
 
 let
 
+  cfg = config.boot.bcachefs;
+
   bootFs = filterAttrs (n: fs: (fs.fsType == "bcachefs") && (utils.fsNeededForBoot fs)) config.fileSystems;
 
   commonFunctions = ''
@@ -40,9 +42,14 @@ let
 in
 
 {
+  options.boot.bcachefs.toolPackage = mkOption {
+    type = types.package;
+    default = pkgs.bcachefs-tools;
+  };
+
   config = mkIf (elem "bcachefs" config.boot.supportedFilesystems) (mkMerge [
     {
-      system.fsPackages = [ pkgs.bcachefs-tools ];
+      system.fsPackages = [ cfg.toolPackage ];
 
       # use kernel package with bcachefs support until it's in mainline
       boot.kernelPackages = pkgs.linuxPackages_testing_bcachefs;
@@ -53,7 +60,7 @@ in
       boot.initrd.availableKernelModules = [ "bcachefs" "chacha20" "poly1305" ];
 
       boot.initrd.extraUtilsCommands = ''
-        copy_bin_and_libs ${pkgs.bcachefs-tools}/bin/bcachefs
+        copy_bin_and_libs ${cfg.toolPackage}/bin/bcachefs
       '';
       boot.initrd.extraUtilsCommandsTest = ''
         $out/bin/bcachefs version
