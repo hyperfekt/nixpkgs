@@ -1,0 +1,67 @@
+diff --git a/transcrypt b/transcrypt
+index a0b562d..9c6da77 100755
+--- a/transcrypt
++++ b/transcrypt
+@@ -278,6 +278,16 @@ save_helper_scripts() {
+ 
+ 	cat <<-'EOF' > "${GIT_DIR}/crypt/clean"
+ 		#!/usr/bin/env bash
++
++		NIX_DEPENDENCIES="openssl coreutils"
++		if $NIX_SHELL_WRAPPED; then
++			command -v nix-shell > /dev/null || break
++			export NIX_SHELL_WRAPPED=false
++			exec nix-shell --run "$(pwd)/$0 $@" -p $NIX_DEPENDENCIES
++		else
++			export NIX_SHELL_WRAPPED=
++		fi
++
+ 		filename=$1
+ 		# ignore empty files
+ 		if [[ -s $filename ]]; then
+@@ -300,6 +310,16 @@ save_helper_scripts() {
+ 
+ 	cat <<-'EOF' > "${GIT_DIR}/crypt/smudge"
+ 		#!/usr/bin/env bash
++
++		NIX_DEPENDENCIES="openssl coreutils"
++		if $NIX_SHELL_WRAPPED; then
++			command -v nix-shell > /dev/null || break
++			export NIX_SHELL_WRAPPED=false
++			exec nix-shell --run "$(pwd)/$0 $@" -p $NIX_DEPENDENCIES
++		else
++			export NIX_SHELL_WRAPPED=
++		fi
++
+ 		tempfile=$(mktemp 2> /dev/null || mktemp -t tmp)
+ 		trap 'rm -f "$tempfile"' EXIT
+ 		cipher=$(git config --get --local transcrypt.cipher)
+@@ -309,6 +329,16 @@ save_helper_scripts() {
+ 
+ 	cat <<-'EOF' > "${GIT_DIR}/crypt/textconv"
+ 		#!/usr/bin/env bash
++
++		NIX_DEPENDENCIES="openssl coreutils"
++		if $NIX_SHELL_WRAPPED; then
++			command -v nix-shell > /dev/null || break
++			export NIX_SHELL_WRAPPED=false
++			exec nix-shell --run "$(pwd)/$0 $@" -p $NIX_DEPENDENCIES
++		else
++			export NIX_SHELL_WRAPPED=
++		fi
++
+ 		filename=$1
+ 		# ignore empty files
+ 		if [[ -s $filename ]]; then
+@@ -351,7 +381,10 @@ save_configuration() {
+ 	git config merge.renormalize 'true'
+ 
+ 	# add a git alias for listing encrypted files
+-	git config alias.ls-crypt "!git ls-files | git check-attr --stdin filter | awk 'BEGIN { FS = \":\" }; /crypt$/{ print \$1 }'"
++	unescaped="git ls-files | git check-attr --stdin filter | awk 'BEGIN { FS = \":\" }; /crypt$/{ print \$1 }'"
++	escaped=$(sed 's/[$\"`]/\\&/g' <<< $unescaped)
++	wrapped=$(sed 's/[$\"`]/\\&/g' <<< "if command -v nix-shell >/dev/null; then nix-shell --run \"$escaped\" -p gawk; else $unescaped; fi")
++	git config alias.ls-crypt "!bash -c \"$wrapped\""
+ }
+ 
+ # display the current configuration settings

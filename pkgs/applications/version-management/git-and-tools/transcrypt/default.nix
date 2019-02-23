@@ -11,6 +11,8 @@ stdenv.mkDerivation rec {
     sha256 = "1dkr69plk16wllk5bzlkchrzw63pk239dgbjhrb3mb61i065jdam";
   };
 
+  patches = [ ./nix-shell_helper-scripts.patch ];
+
   buildInputs = [ makeWrapper git openssl coreutils utillinux gnugrep gnused];
 
   installPhase = ''
