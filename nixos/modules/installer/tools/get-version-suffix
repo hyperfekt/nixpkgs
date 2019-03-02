@@ -14,7 +14,7 @@ getVersion() {
     fi
 }
 
-if nixpkgs=$(nix-instantiate --find-file nixpkgs "$@"); then
+if nixpkgs=$(nix-instantiate --find-file nixos "$@"); then
     getVersion $nixpkgs
     if [ -n "$rev" ]; then
         echo ".git.$rev"
