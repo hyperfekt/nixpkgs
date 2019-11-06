@@ -1,5 +1,5 @@
 { stdenv, rustPlatform, fetchgit, runCommand, symlinkJoin
-, pkgconfig, minijail, python2, libusb1, libcap
+, pkgconfig, minijail, dtc, libusb1, libcap
 }:
 
 let
@@ -56,7 +56,7 @@ in
 
     nativeBuildInputs = [ pkgconfig ];
 
-    buildInputs = [ libcap python2.pkgs.libfdt libusb1 minijail ];
+    buildInputs = [ dtc libcap libusb1 minijail ];
 
     postPatch = ''
       sed -i "s|/usr/share/policy/crosvm/|$out/share/policy/|g" \
