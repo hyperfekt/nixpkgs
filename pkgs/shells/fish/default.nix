@@ -13,8 +13,10 @@
 , pcre2
 , gettext
 , ncurses
-, python3
 , cmake
+
+, usePython ? true # used for autocompletion generated from manpages and config editing
+, python3 ? null
 
 , writeText
 , nixosTests
@@ -129,12 +131,10 @@ let
     '';
 
     # Required binaries during execution
-    # Python: Autocompletion generated from manpages and config editing
     propagatedBuildInputs = [
       coreutils
       gnugrep
       gnused
-      python3
       groff
       gettext
     ] ++ lib.optional (!stdenv.isDarwin) man-db;
@@ -159,11 +159,10 @@ let
              "$out/share/fish/functions/__fish_print_help.fish"
       sed -e "s|clear;|${getBin ncurses}/bin/clear;|"      \
           -i "$out/share/fish/functions/fish_default_key_bindings.fish"
-      sed -e "s|python3|${getBin python3}/bin/python3|"    \
-          -i $out/share/fish/functions/{__fish_config_interactive.fish,fish_config.fish,fish_update_completions.fish}
       sed -i "s|/usr/local/sbin /sbin /usr/sbin||"         \
              $out/share/fish/completions/{sudo.fish,doas.fish}
 
+    '' + optionalString usePython ''
       cat > $out/share/fish/functions/__fish_anypython.fish <<EOF
       function __fish_anypython
           echo ${python3.interpreter}
@@ -206,7 +205,7 @@ let
     };
   };
 
-  tests = {
+  tests = lib.optionalAttrs usePython {
 
     # Test the fish_config tool by checking the generated splash page.
     # Since the webserver requires a port to run, it is not started.
@@ -221,7 +220,7 @@ let
           sed -e '/fileurl =/q' -i webconfig.py
           echo "print(fileurl)" >> webconfig.py
           # and check whether the message appears on the page
-          cat (${python3}/bin/python ./webconfig.py \
+          cat (${python3.interpreter} ./webconfig.py \
             | tail -n1 | sed -ne 's|.*\(/tmp/.*\)|\1|p' \
           ) | grep 'a href="http://localhost.*Start the Fish Web config'
 
