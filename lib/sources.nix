@@ -4,7 +4,8 @@
 rec {
 
   # Returns the type of a path: regular (for file), symlink, or directory
-  pathType = p: with builtins; getAttr (baseNameOf p) (readDir (dirOf p));
+  # Discarding the string context is safe because that string is only used for indexing the attrset
+  pathType = p: with builtins; getAttr (unsafeDiscardStringContext (baseNameOf p)) (readDir (dirOf p));
 
   # Returns true if the path exists and is a directory, false otherwise
   pathIsDirectory = p: if builtins.pathExists p then (pathType p) == "directory" else false;
