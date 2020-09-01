@@ -194,7 +194,7 @@ in buildFHSUserEnv rec {
     SDL2_ttf
     SDL2_mixer
     gstreamer
-    gst-plugins-base
+    gst_all_1.gst-plugins-base
     libappindicator-gtk2
     libcaca
     libcanberra
